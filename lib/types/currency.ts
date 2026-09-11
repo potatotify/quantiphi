@@ -27,6 +27,17 @@ export interface ConvertResponse {
   createdAt: string;
 }
 
+export interface TrendPoint {
+  date: string;
+  rate: number;
+}
+
+export interface TrendResponse {
+  from: CurrencyCode;
+  to: CurrencyCode;
+  points: TrendPoint[];
+}
+
 export interface ApiErrorResponse {
   error: string;
 }

@@ -1,57 +1,24 @@
-import { isSupportedCurrency } from "@/lib/constants/currencies";
 import { prisma } from "@/lib/db/prisma";
-import { ExchangeRateError, getLatestRate, normalizeCurrencyCode } from "@/lib/exchange-rate";
+import { getLatestRate } from "@/lib/exchange-rate";
 import type { ConvertRequest, ConvertResponse } from "@/lib/types/currency";
+import { parseCurrencyPair, ValidationError } from "@/lib/validation/currency";
 
-export class ValidationError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "ValidationError";
-  }
-}
+export { ValidationError };
 
 export function parseConvertRequest(body: unknown): ConvertRequest {
   if (!isRecord(body)) {
     throw new ValidationError("Request body must be a JSON object.");
   }
 
-  if (typeof body.from !== "string" || body.from.trim() === "") {
-    throw new ValidationError("Field \"from\" must be a currency code.");
-  }
-
-  if (typeof body.to !== "string" || body.to.trim() === "") {
-    throw new ValidationError("Field \"to\" must be a currency code.");
-  }
+  const pair = parseCurrencyPair(body.from, body.to);
 
   if (typeof body.amount !== "number" || !Number.isFinite(body.amount) || body.amount <= 0) {
     throw new ValidationError("Amount must be a positive finite number.");
   }
 
-  let from: string;
-  let to: string;
-
-  try {
-    from = normalizeCurrencyCode(body.from);
-    to = normalizeCurrencyCode(body.to);
-  } catch (error) {
-    if (error instanceof ExchangeRateError) {
-      throw new ValidationError(error.message);
-    }
-
-    throw error;
-  }
-
-  if (!isSupportedCurrency(from)) {
-    throw new ValidationError(`Unsupported source currency: ${from}.`);
-  }
-
-  if (!isSupportedCurrency(to)) {
-    throw new ValidationError(`Unsupported target currency: ${to}.`);
-  }
-
   return {
-    from,
-    to,
+    from: pair.from,
+    to: pair.to,
     amount: body.amount,
   };
 }

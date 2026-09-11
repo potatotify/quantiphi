@@ -7,6 +7,7 @@ import { ConversionResult } from "@/components/ConversionResult";
 import { ConvertButton } from "@/components/ConvertButton";
 import { CurrencySelector } from "@/components/CurrencySelector";
 import { ErrorBanner } from "@/components/ErrorBanner";
+import { TrendChart } from "@/components/TrendChart";
 import { requestConversion } from "@/lib/api/convert";
 import {
   DEFAULT_BASE_CURRENCY,
@@ -57,42 +58,45 @@ export function CurrencyConverter() {
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      aria-busy={loading}
-      className="flex flex-col gap-5 rounded-3xl border border-slate-800 bg-slate-900/40 p-5 shadow-xl shadow-slate-950/40 sm:p-8"
-    >
-      <AmountInput value={amount} disabled={loading} onChange={setAmount} />
+    <div className="flex flex-col gap-6">
+      <form
+        onSubmit={handleSubmit}
+        aria-busy={loading}
+        className="flex flex-col gap-5 rounded-3xl border border-slate-800 bg-slate-900/40 p-5 shadow-xl shadow-slate-950/40 sm:p-8"
+      >
+        <AmountInput value={amount} disabled={loading} onChange={setAmount} />
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <CurrencySelector
-          id="from"
-          label="Source currency"
-          value={from}
-          options={SUPPORTED_CURRENCIES}
-          disabled={loading}
-          onChange={setFrom}
-        />
-        <CurrencySelector
-          id="to"
-          label="Target currency"
-          value={to}
-          options={SUPPORTED_CURRENCIES}
-          disabled={loading}
-          onChange={setTo}
-        />
-      </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <CurrencySelector
+            id="from"
+            label="Source currency"
+            value={from}
+            options={SUPPORTED_CURRENCIES}
+            disabled={loading}
+            onChange={setFrom}
+          />
+          <CurrencySelector
+            id="to"
+            label="Target currency"
+            value={to}
+            options={SUPPORTED_CURRENCIES}
+            disabled={loading}
+            onChange={setTo}
+          />
+        </div>
 
-      <ConvertButton loading={loading} />
+        <ConvertButton loading={loading} />
 
-      {loading ? (
-        <p className="text-sm text-slate-400" role="status">
-          Fetching the latest exchange rate…
-        </p>
-      ) : null}
+        {loading ? (
+          <p className="text-sm text-slate-400" role="status">
+            Fetching the latest exchange rate…
+          </p>
+        ) : null}
 
-      {error ? <ErrorBanner message={error} /> : null}
-      {result ? <ConversionResult result={result} /> : null}
-    </form>
+        {error ? <ErrorBanner message={error} /> : null}
+        {result ? <ConversionResult result={result} /> : null}
+      </form>
+      <TrendChart from={from} to={to} />
+    </div>
   );
 }
