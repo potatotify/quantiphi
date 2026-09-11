@@ -1,26 +1,19 @@
+import "server-only";
+
 import { prisma } from "@/lib/db/prisma";
 import { getLatestRate } from "@/lib/exchange-rate";
 import { recordFavoriteUsage } from "@/lib/services/favorites";
 import type { ConvertRequest, ConvertResponse } from "@/lib/types/currency";
-import { parseCurrencyPair, ValidationError } from "@/lib/validation/currency";
-
-export { ValidationError };
+import { parseCurrencyPair, parseJsonObject, parsePositiveAmount } from "@/lib/validation/currency";
 
 export function parseConvertRequest(body: unknown): ConvertRequest {
-  if (!isRecord(body)) {
-    throw new ValidationError("Request body must be a JSON object.");
-  }
-
-  const pair = parseCurrencyPair(body.from, body.to);
-
-  if (typeof body.amount !== "number" || !Number.isFinite(body.amount) || body.amount <= 0) {
-    throw new ValidationError("Amount must be a positive finite number.");
-  }
+  const payload = parseJsonObject(body);
+  const pair = parseCurrencyPair(payload.from, payload.to);
 
   return {
     from: pair.from,
     to: pair.to,
-    amount: body.amount,
+    amount: parsePositiveAmount(payload.amount),
   };
 }
 
@@ -50,8 +43,4 @@ export async function convertCurrency(request: ConvertRequest): Promise<ConvertR
     convertedAmount: record.convertedAmount,
     createdAt: record.createdAt.toISOString(),
   };
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
 }

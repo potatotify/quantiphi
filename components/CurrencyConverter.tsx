@@ -10,6 +10,7 @@ import { ErrorBanner } from "@/components/ErrorBanner";
 import { FavoritesList } from "@/components/FavoritesList";
 import { TravelBudget } from "@/components/TravelBudget";
 import { TrendChart } from "@/components/TrendChart";
+import { EmptyState, Panel, SectionHeading, Skeleton } from "@/components/ui/Panel";
 import { requestConversion } from "@/lib/api/convert";
 import {
   DEFAULT_BASE_CURRENCY,
@@ -62,27 +63,30 @@ export function CurrencyConverter() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-800 bg-slate-900/40 px-4 py-3">
+      <div className="flex flex-col gap-3 rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
         <div>
-          <p className="text-sm font-medium text-slate-100">Travel Budget Mode</p>
-          <p className="text-xs text-slate-400">Compare one amount in 5 major currencies.</p>
+          <p className="text-sm font-semibold text-slate-100">Travel Budget Mode</p>
+          <p className="mt-1 text-sm text-slate-400">Compare one amount in 5 major currencies.</p>
         </div>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={travelMode}
-          aria-label="Travel Budget Mode"
-          onClick={() => setTravelMode((current) => !current)}
-          className={`relative h-7 w-12 rounded-full transition ${
-            travelMode ? "bg-sky-400" : "bg-slate-700"
-          }`}
-        >
-          <span
-            className={`absolute top-0.5 h-6 w-6 rounded-full bg-slate-950 transition ${
-              travelMode ? "left-5" : "left-0.5"
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-slate-400">{travelMode ? "On" : "Off"}</span>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={travelMode}
+            aria-label="Travel Budget Mode"
+            onClick={() => setTravelMode((current) => !current)}
+            className={`relative h-7 w-12 rounded-full transition ${
+              travelMode ? "bg-sky-400" : "bg-slate-700"
             }`}
-          />
-        </button>
+          >
+            <span
+              className={`absolute top-0.5 h-6 w-6 rounded-full bg-slate-950 transition ${
+                travelMode ? "left-5" : "left-0.5"
+              }`}
+            />
+          </button>
+        </div>
       </div>
 
       {travelMode ? (
@@ -94,53 +98,75 @@ export function CurrencyConverter() {
         />
       ) : (
         <>
-          <form
-            onSubmit={handleSubmit}
-            aria-busy={loading}
-            className="flex flex-col gap-5 rounded-3xl border border-slate-800 bg-slate-900/40 p-5 shadow-xl shadow-slate-950/40 sm:p-8"
-          >
-            <AmountInput value={amount} disabled={loading} onChange={setAmount} />
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <CurrencySelector
-                id="from"
-                label="Source currency"
-                value={from}
-                options={SUPPORTED_CURRENCIES}
-                disabled={loading}
-                onChange={setFrom}
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+            <Panel>
+              <SectionHeading
+                title="Converter"
+                description="Choose an amount and a currency pair."
               />
-              <CurrencySelector
-                id="to"
-                label="Target currency"
-                value={to}
-                options={SUPPORTED_CURRENCIES}
-                disabled={loading}
-                onChange={setTo}
-              />
-            </div>
+              <form onSubmit={handleSubmit} aria-busy={loading} className="flex flex-col gap-5">
+                <AmountInput value={amount} disabled={loading} onChange={setAmount} />
 
-            <ConvertButton loading={loading} />
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <CurrencySelector
+                    id="from"
+                    label="Source currency"
+                    value={from}
+                    options={SUPPORTED_CURRENCIES}
+                    disabled={loading}
+                    onChange={setFrom}
+                  />
+                  <CurrencySelector
+                    id="to"
+                    label="Target currency"
+                    value={to}
+                    options={SUPPORTED_CURRENCIES}
+                    disabled={loading}
+                    onChange={setTo}
+                  />
+                </div>
+
+                <ConvertButton loading={loading} />
+                {error ? <ErrorBanner message={error} /> : null}
+              </form>
+            </Panel>
 
             {loading ? (
-              <p className="text-sm text-slate-400" role="status">
-                Fetching the latest exchange rate…
-              </p>
+              <Panel aria-label="Conversion result">
+                <SectionHeading title="Result" description="Fetching the latest exchange rate…" />
+                <div role="status" aria-label="Converting">
+                  <Skeleton className="mb-3 h-4 w-24" />
+                  <Skeleton className="h-12 w-48" />
+                  <Skeleton className="mt-6 h-16 w-full" />
+                </div>
+              </Panel>
             ) : null}
 
-            {error ? <ErrorBanner message={error} /> : null}
-            {result ? <ConversionResult result={result} /> : null}
-          </form>
-          <FavoritesList
-            from={from}
-            to={to}
-            refreshKey={result?.id}
-            onSelect={(nextFrom, nextTo) => {
-              setFrom(nextFrom);
-              setTo(nextTo);
-            }}
-          />
-          <TrendChart from={from} to={to} />
+            {!loading && result ? <ConversionResult result={result} /> : null}
+
+            {!loading && !result ? (
+              <Panel aria-label="Conversion result">
+                <SectionHeading title="Result" />
+                <EmptyState
+                  title="No conversion yet"
+                  description="Enter an amount and convert to see the live result and exchange rate."
+                />
+              </Panel>
+            ) : null}
+          </div>
+
+          <div className="grid gap-6 lg:grid-cols-2">
+            <FavoritesList
+              from={from}
+              to={to}
+              refreshKey={result?.id}
+              onSelect={(nextFrom, nextTo) => {
+                setFrom(nextFrom);
+                setTo(nextTo);
+              }}
+            />
+            <TrendChart from={from} to={to} />
+          </div>
         </>
       )}
     </div>

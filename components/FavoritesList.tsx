@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { ErrorBanner } from "@/components/ErrorBanner";
+import { EmptyState, Panel, SectionHeading, Skeleton } from "@/components/ui/Panel";
 import { requestFavorites } from "@/lib/api/favorites";
 import type { CurrencyCode, FavoritePairResponse } from "@/lib/types/currency";
 
@@ -38,29 +39,27 @@ export function FavoritesList({ from, to, refreshKey, onSelect }: FavoritesListP
   }
 
   return (
-    <section
-      aria-label="Favorite currency pairs"
-      className="rounded-3xl border border-slate-800 bg-slate-900/40 p-5 shadow-xl shadow-slate-950/40 sm:p-8"
-    >
-      <div className="mb-4">
-        <h2 className="text-lg font-semibold text-slate-100">Favorites</h2>
-        <p className="mt-1 text-sm text-slate-400">
-          Frequent pairs, ranked by how often you convert them.
-        </p>
-      </div>
+    <Panel aria-label="Favorite currency pairs">
+      <SectionHeading
+        title="Favorites"
+        description="Frequent pairs, ranked by how often you convert them."
+      />
 
       {error ? <ErrorBanner message={error} /> : null}
 
       {loading ? (
-        <p className="text-sm text-slate-400" role="status">
-          Loading favorites…
-        </p>
+        <div className="space-y-2" role="status" aria-label="Loading favorites">
+          <Skeleton className="h-16 w-full" />
+          <Skeleton className="h-16 w-full" />
+          <Skeleton className="h-16 w-3/4" />
+        </div>
       ) : null}
 
-      {!loading && favorites.length === 0 ? (
-        <p className="text-sm text-slate-400">
-          Convert a pair to add it here. The most-used pairs stay at the top.
-        </p>
+      {!loading && !error && favorites.length === 0 ? (
+        <EmptyState
+          title="No frequent pairs yet"
+          description="Convert a pair to add it here. The most-used pairs stay at the top."
+        />
       ) : null}
 
       {!loading && favorites.length > 0 ? (
@@ -74,16 +73,17 @@ export function FavoritesList({ from, to, refreshKey, onSelect }: FavoritesListP
                   type="button"
                   onClick={() => onSelect(favorite.from, favorite.to)}
                   aria-pressed={selected}
-                  className={`w-full rounded-xl border px-4 py-3 text-left transition ${
+                  aria-label={`Use favorite pair ${favorite.from} to ${favorite.to}`}
+                  className={`flex w-full items-center justify-between rounded-xl border px-4 py-3 text-left transition ${
                     selected
-                      ? "border-sky-400 bg-sky-400/10 text-sky-200"
-                      : "border-slate-800 bg-slate-950/50 text-slate-100 hover:border-slate-600"
+                      ? "border-sky-400 bg-sky-400/10 text-sky-100"
+                      : "border-slate-800 bg-slate-950/70 text-slate-100 hover:border-slate-600"
                   }`}
                 >
-                  <span className="block text-sm font-medium">
+                  <span className="text-sm font-medium">
                     {favorite.from} → {favorite.to}
                   </span>
-                  <span className="mt-1 block text-xs text-slate-400">
+                  <span className="text-xs text-slate-400">
                     Used {favorite.usageCount} {favorite.usageCount === 1 ? "time" : "times"}
                   </span>
                 </button>
@@ -92,6 +92,6 @@ export function FavoritesList({ from, to, refreshKey, onSelect }: FavoritesListP
           })}
         </ul>
       ) : null}
-    </section>
+    </Panel>
   );
 }

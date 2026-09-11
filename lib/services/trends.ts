@@ -1,3 +1,5 @@
+import "server-only";
+
 import { getThirtyDayRates } from "@/lib/exchange-rate";
 import type { TrendResponse } from "@/lib/types/currency";
 import { parseCurrencyPair } from "@/lib/validation/currency";

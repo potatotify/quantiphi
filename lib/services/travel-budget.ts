@@ -1,17 +1,17 @@
+import "server-only";
+
 import { getCurrencyOption } from "@/lib/format/currency";
 import { TRAVEL_BUDGET_CURRENCIES } from "@/lib/constants/currencies";
 import { ExchangeRateError, getLatestRates } from "@/lib/exchange-rate";
 import type { TravelBudgetRequest, TravelBudgetResponse } from "@/lib/types/currency";
-import { parsePositiveAmount, parseSupportedCurrency, ValidationError } from "@/lib/validation/currency";
+import { parseJsonObject, parsePositiveAmount, parseSupportedCurrency } from "@/lib/validation/currency";
 
 export function parseTravelBudgetRequest(body: unknown): TravelBudgetRequest {
-  if (!isRecord(body)) {
-    throw new ValidationError("Request body must be a JSON object.");
-  }
+  const payload = parseJsonObject(body);
 
   return {
-    baseCurrency: parseSupportedCurrency(body.baseCurrency, "baseCurrency"),
-    amount: parsePositiveAmount(body.amount),
+    baseCurrency: parseSupportedCurrency(payload.baseCurrency, "baseCurrency"),
+    amount: parsePositiveAmount(payload.amount),
   };
 }
 
@@ -47,6 +47,3 @@ export async function calculateTravelBudget(
   };
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}

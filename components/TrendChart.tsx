@@ -12,6 +12,7 @@ import {
 } from "recharts";
 
 import { ErrorBanner } from "@/components/ErrorBanner";
+import { EmptyState, Panel, SectionHeading, Skeleton } from "@/components/ui/Panel";
 import { requestTrend } from "@/lib/api/trends";
 import { formatRate } from "@/lib/format/currency";
 import type { CurrencyCode, TrendPoint } from "@/lib/types/currency";
@@ -59,30 +60,30 @@ export function TrendChart({ from, to }: TrendChartProps) {
   }, [from, to]);
 
   return (
-    <section
-      aria-busy={loading}
-      aria-label={`30-day exchange rate trend for ${from} to ${to}`}
-      className="rounded-3xl border border-slate-800 bg-slate-900/40 p-5 shadow-xl shadow-slate-950/40 sm:p-8"
-    >
-      <div className="mb-5">
-        <h2 className="text-lg font-semibold text-slate-100">30-day trend</h2>
-        <p className="mt-1 text-sm text-slate-400">
-          {from} → {to} over the last 30 days
-        </p>
-      </div>
+    <Panel aria-busy={loading} aria-label={`30-day exchange rate trend for ${from} to ${to}`}>
+      <SectionHeading title="30-day trend" description={`${from} → ${to} over the last 30 days`} />
 
       {loading ? (
-        <div
-          className="flex h-64 items-center justify-center rounded-2xl border border-slate-800 bg-slate-950/60 text-sm text-slate-400"
-          role="status"
-        >
-          Loading exchange-rate history…
+        <div className="space-y-3" role="status" aria-label="Loading exchange-rate history">
+          <Skeleton className="h-48 w-full" />
+          <div className="flex gap-2">
+            <Skeleton className="h-3 w-16" />
+            <Skeleton className="h-3 w-16" />
+            <Skeleton className="h-3 w-16" />
+          </div>
         </div>
       ) : null}
 
       {!loading && error ? <ErrorBanner message={error} /> : null}
 
-      {!loading && !error ? (
+      {!loading && !error && points.length === 0 ? (
+        <EmptyState
+          title="No trend data"
+          description="There is not enough historical data to draw this chart."
+        />
+      ) : null}
+
+      {!loading && !error && points.length > 0 ? (
         <div className="h-64 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={points} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
@@ -117,7 +118,7 @@ export function TrendChart({ from, to }: TrendChartProps) {
           </ResponsiveContainer>
         </div>
       ) : null}
-    </section>
+    </Panel>
   );
 }
 

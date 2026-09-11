@@ -1,8 +1,10 @@
+import "server-only";
+
 import { Prisma } from "@prisma/client";
 
 import { prisma } from "@/lib/db/prisma";
 import type { CurrencyCode, FavoritePairResponse } from "@/lib/types/currency";
-import { parseCurrencyPair, ValidationError } from "@/lib/validation/currency";
+import { parseCurrencyPair, parseJsonObject, ValidationError } from "@/lib/validation/currency";
 
 export class DuplicateFavoriteError extends Error {
   constructor() {
@@ -19,11 +21,8 @@ export class FavoriteNotFoundError extends Error {
 }
 
 export function parseFavoriteRequest(body: unknown) {
-  if (!isRecord(body)) {
-    throw new ValidationError("Request body must be a JSON object.");
-  }
-
-  return parseCurrencyPair(body.from, body.to);
+  const payload = parseJsonObject(body);
+  return parseCurrencyPair(payload.from, payload.to);
 }
 
 export async function listFavorites(): Promise<FavoritePairResponse[]> {
@@ -98,7 +97,37 @@ export async function createFavorite(
   from: CurrencyCode,
   to: CurrencyCode,
 ): Promise<FavoritePairResponse> {
-  return recordFavoriteUsage(from, to);
+  const existing = await prisma.favoritePair.findUnique({
+    where: {
+      baseCurrency_targetCurrency: {
+        baseCurrency: from,
+        targetCurrency: to,
+      },
+    },
+  });
+
+  if (existing) {
+    throw new DuplicateFavoriteError();
+  }
+
+  try {
+    const favorite = await prisma.favoritePair.create({
+      data: {
+        baseCurrency: from,
+        targetCurrency: to,
+        usageCount: 1,
+        lastUsedAt: new Date(),
+      },
+    });
+
+    return toFavoriteResponse(favorite);
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      throw new DuplicateFavoriteError();
+    }
+
+    throw error;
+  }
 }
 
 export async function deleteFavorite(id: string): Promise<{ id: string }> {
@@ -106,9 +135,15 @@ export async function deleteFavorite(id: string): Promise<{ id: string }> {
     throw new ValidationError("Favorite id is required.");
   }
 
+  const favoriteId = id.trim();
+
+  if (favoriteId.length > 64) {
+    throw new ValidationError("Favorite id is invalid.");
+  }
+
   try {
     const favorite = await prisma.favoritePair.delete({
-      where: { id: id.trim() },
+      where: { id: favoriteId },
     });
 
     return { id: favorite.id };
@@ -139,6 +174,3 @@ function toFavoriteResponse(favorite: {
   };
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}

@@ -2,6 +2,7 @@ import "server-only";
 
 import { getExchangeRateApiKey } from "@/lib/config/env";
 import type { CurrencyCode, TrendPoint } from "@/lib/types/currency";
+import { normalizeCurrencyCode } from "@/lib/validation/currency";
 
 const API_BASE_URL = "https://v6.exchangerate-api.com/v6";
 const HISTORY_FALLBACK_URL = "https://api.frankfurter.app";
@@ -16,7 +17,8 @@ export type ExchangeRateErrorCode =
   | "API"
   | "INVALID_RESPONSE"
   | "UNSUPPORTED_CURRENCY"
-  | "PLAN_UPGRADE";
+  | "PLAN_UPGRADE"
+  | "EMPTY_DATA";
 
 export class ExchangeRateError extends Error {
   readonly code: ExchangeRateErrorCode;
@@ -49,19 +51,6 @@ interface ExchangeRateApiSuccess {
 interface ExchangeRateApiFailure {
   result: "error";
   "error-type"?: string;
-}
-
-export function normalizeCurrencyCode(code: string): CurrencyCode {
-  const normalized = code.trim().toUpperCase();
-
-  if (!CURRENCY_CODE_PATTERN.test(normalized)) {
-    throw new ExchangeRateError(
-      `Invalid currency code: "${code}". Expected a 3-letter ISO 4217 code.`,
-      "UNSUPPORTED_CURRENCY",
-    );
-  }
-
-  return normalized;
 }
 
 export async function getLatestRates(baseCurrency: CurrencyCode): Promise<LatestRates> {
@@ -292,7 +281,13 @@ function parseLatestRates(payload: unknown): LatestRates {
     throw new ExchangeRateError("ExchangeRate API response is missing a base currency.", "INVALID_RESPONSE");
   }
 
-  const baseCurrency = normalizeCurrencyCode(successPayload.base_code);
+  let baseCurrency: CurrencyCode;
+
+  try {
+    baseCurrency = normalizeCurrencyCode(successPayload.base_code);
+  } catch {
+    throw new ExchangeRateError("ExchangeRate API response is missing a base currency.", "INVALID_RESPONSE");
+  }
 
   if (!isRateMap(successPayload.conversion_rates)) {
     throw new ExchangeRateError("ExchangeRate API response contains invalid conversion rates.", "INVALID_RESPONSE");
@@ -351,7 +346,7 @@ function requireTrendPoints(points: TrendPoint[], from: CurrencyCode, to: Curren
   if (points.length < 2) {
     throw new ExchangeRateError(
       `Not enough historical data is available for ${from} → ${to}.`,
-      "INVALID_RESPONSE",
+      "EMPTY_DATA",
     );
   }
 

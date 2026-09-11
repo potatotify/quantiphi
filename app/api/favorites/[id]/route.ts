@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 
-import { deleteFavorite, FavoriteNotFoundError } from "@/lib/services/favorites";
-import type { ApiErrorResponse } from "@/lib/types/currency";
-import { ValidationError } from "@/lib/validation/currency";
+import { toErrorResponse } from "@/lib/http/errors";
+import { deleteFavorite } from "@/lib/services/favorites";
 
 export async function DELETE(
   _request: Request,
@@ -12,18 +11,6 @@ export async function DELETE(
     const deleted = await deleteFavorite(params.id);
     return NextResponse.json(deleted, { status: 200 });
   } catch (error) {
-    if (error instanceof ValidationError) {
-      return errorResponse(error.message, 400);
-    }
-
-    if (error instanceof FavoriteNotFoundError) {
-      return errorResponse(error.message, 404);
-    }
-
-    return errorResponse("Unable to delete the favorite pair.", 500);
+    return toErrorResponse(error, "Unable to delete the favorite pair.");
   }
-}
-
-function errorResponse(error: string, status: number) {
-  return NextResponse.json<ApiErrorResponse>({ error }, { status });
 }
