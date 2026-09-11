@@ -1,0 +1,29 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model FavoritePair {
+  id             String   @id @default(cuid())
+  baseCurrency   String
+  targetCurrency String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([baseCurrency, targetCurrency])
+}
+
+model ConversionHistory {
+  id              String   @id @default(cuid())
+  baseCurrency    String
+  targetCurrency  String
+  amount          Float
+  convertedAmount Float
+  rate            Float
+  source          String?
+  createdAt       DateTime @default(now())
+}
