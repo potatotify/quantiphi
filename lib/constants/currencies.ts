@@ -14,3 +14,9 @@ export const SUPPORTED_CURRENCIES: CurrencyOption[] = [
 export const DEFAULT_BASE_CURRENCY = "USD";
 export const DEFAULT_TARGET_CURRENCY = "EUR";
 export const TRAVEL_BUDGET_CURRENCIES = ["USD", "EUR", "GBP", "JPY", "AUD"] as const;
+
+const SUPPORTED_CURRENCY_CODES = new Set(SUPPORTED_CURRENCIES.map((currency) => currency.code));
+
+export function isSupportedCurrency(code: string): boolean {
+  return SUPPORTED_CURRENCY_CODES.has(code);
+}
