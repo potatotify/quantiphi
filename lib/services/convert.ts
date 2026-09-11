@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db/prisma";
 import { getLatestRate } from "@/lib/exchange-rate";
+import { recordFavoriteUsage } from "@/lib/services/favorites";
 import type { ConvertRequest, ConvertResponse } from "@/lib/types/currency";
 import { parseCurrencyPair, ValidationError } from "@/lib/validation/currency";
 
@@ -37,6 +38,8 @@ export async function convertCurrency(request: ConvertRequest): Promise<ConvertR
       source: "live",
     },
   });
+
+  await recordFavoriteUsage(request.from, request.to);
 
   return {
     id: record.id,

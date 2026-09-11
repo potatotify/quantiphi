@@ -38,6 +38,15 @@ export interface TrendResponse {
   points: TrendPoint[];
 }
 
+export interface FavoritePairResponse {
+  id: string;
+  from: CurrencyCode;
+  to: CurrencyCode;
+  usageCount: number;
+  lastUsedAt: string | null;
+  createdAt: string;
+}
+
 export interface ApiErrorResponse {
   error: string;
 }

@@ -7,6 +7,7 @@ import { ConversionResult } from "@/components/ConversionResult";
 import { ConvertButton } from "@/components/ConvertButton";
 import { CurrencySelector } from "@/components/CurrencySelector";
 import { ErrorBanner } from "@/components/ErrorBanner";
+import { FavoritesList } from "@/components/FavoritesList";
 import { TrendChart } from "@/components/TrendChart";
 import { requestConversion } from "@/lib/api/convert";
 import {
@@ -96,6 +97,15 @@ export function CurrencyConverter() {
         {error ? <ErrorBanner message={error} /> : null}
         {result ? <ConversionResult result={result} /> : null}
       </form>
+      <FavoritesList
+        from={from}
+        to={to}
+        refreshKey={result?.id}
+        onSelect={(nextFrom, nextTo) => {
+          setFrom(nextFrom);
+          setTo(nextTo);
+        }}
+      />
       <TrendChart from={from} to={to} />
     </div>
   );
