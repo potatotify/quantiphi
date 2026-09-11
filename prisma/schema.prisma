@@ -15,6 +15,7 @@ model FavoritePair {
   updatedAt      DateTime @updatedAt
 
   @@unique([baseCurrency, targetCurrency])
+  @@index([createdAt])
 }
 
 model ConversionHistory {
@@ -26,4 +27,7 @@ model ConversionHistory {
   rate            Float
   source          String?
   createdAt       DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([baseCurrency, targetCurrency, createdAt])
 }
