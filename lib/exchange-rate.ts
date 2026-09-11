@@ -80,15 +80,19 @@ export async function getThirtyDayRates(
     return dates.map((date) => ({ date: toIsoDate(date), rate: 1 }));
   }
 
+  let points: TrendPoint[];
+
   try {
-    return await getOfficialHistoryRange(from, to, dates);
+    points = await getOfficialHistoryRange(from, to, dates);
   } catch (error) {
     if (error instanceof ExchangeRateError && error.code === "PLAN_UPGRADE") {
-      return getFallbackHistoryRange(from, to, dates);
+      points = await getFallbackHistoryRange(from, to, dates);
+    } else {
+      throw error;
     }
-
-    throw error;
   }
+
+  return requireTrendPoints(fillMissingDays(dates, points), from, to);
 }
 
 async function getOfficialHistoryRange(
@@ -135,7 +139,7 @@ async function getOfficialHistoryRange(
     }
   }
 
-  return requireTrendPoints(points, from, to);
+  return points;
 }
 
 async function getOfficialHistoryRate(
@@ -197,7 +201,7 @@ async function getFallbackHistoryRange(
     .filter((point): point is TrendPoint => point !== null)
     .sort((left, right) => left.date.localeCompare(right.date));
 
-  return requireTrendPoints(points, from, to);
+  return points;
 }
 
 async function requestExchangeRateApi(path: string): Promise<unknown> {
@@ -340,6 +344,26 @@ function readRate(
   }
 
   return rate;
+}
+
+function fillMissingDays(dates: Date[], points: TrendPoint[]): TrendPoint[] {
+  const rateByDate = new Map(points.map((point) => [point.date, point.rate]));
+  const firstKnownRate = points[0]?.rate;
+  let lastRate = firstKnownRate;
+
+  return dates.map((date) => {
+    const isoDate = toIsoDate(date);
+    const rate = rateByDate.get(isoDate) ?? lastRate;
+
+    if (rate !== undefined) {
+      lastRate = rate;
+    }
+
+    return {
+      date: isoDate,
+      rate: rate ?? firstKnownRate ?? 0,
+    };
+  }).filter((point) => point.rate > 0);
 }
 
 function requireTrendPoints(points: TrendPoint[], from: CurrencyCode, to: CurrencyCode): TrendPoint[] {
