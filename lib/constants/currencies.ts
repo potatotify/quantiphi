@@ -13,6 +13,15 @@ export const SUPPORTED_CURRENCIES: CurrencyOption[] = [
 
 export const DEFAULT_BASE_CURRENCY = "USD";
 export const DEFAULT_TARGET_CURRENCY = "EUR";
+
+/**
+ * Travel Budget Mode always compares against these 5 major global currencies:
+ * - USD: US Dollar (most traded reserve currency)
+ * - EUR: Euro (eurozone)
+ * - GBP: British Pound
+ * - JPY: Japanese Yen
+ * - AUD: Australian Dollar
+ */
 export const TRAVEL_BUDGET_CURRENCIES = ["USD", "EUR", "GBP", "JPY", "AUD"] as const;
 
 const SUPPORTED_CURRENCY_CODES = new Set(SUPPORTED_CURRENCIES.map((currency) => currency.code));
